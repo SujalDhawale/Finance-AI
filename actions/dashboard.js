@@ -62,7 +62,7 @@ export async function createAccount(data) {
     // Check rate limit
     const decision = await aj.protect(req, {
       userId,
-      requested: 1, // Specify how many tokens to consume
+      requested: 1,
     });
 
     if (decision.isDenied()) {
@@ -102,7 +102,6 @@ export async function createAccount(data) {
     });
 
     // If it's the first account, make it default regardless of user input
-    // If not, use the user's preference
     const shouldBeDefault =
       existingAccounts.length === 0 ? true : data.isDefault;
 
@@ -120,7 +119,7 @@ export async function createAccount(data) {
         ...data,
         balance: balanceFloat,
         userId: user.id,
-        isDefault: shouldBeDefault, // Override the isDefault based on our logic
+        isDefault: shouldBeDefault,
       },
     });
 

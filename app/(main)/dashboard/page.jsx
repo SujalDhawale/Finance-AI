@@ -15,7 +15,14 @@ export default async function DashboardPage() {
     getDashboardData(),
   ]);
 
-  const defaultAccount = accounts?.find((account) => account.isDefault);
+  const accountsWithStats = accounts?.map((account) => {
+    const accountTransactions = transactions?.filter((t) => t.accountId === account.id) || [];
+    const income = accountTransactions.filter((t) => t.type === "INCOME").reduce((sum, t) => sum + t.amount, 0);
+    const expense = accountTransactions.filter((t) => t.type === "EXPENSE").reduce((sum, t) => sum + t.amount, 0);
+    return { ...account, income, expense };
+  }) || [];
+
+  const defaultAccount = accountsWithStats?.find((account) => account.isDefault);
 
   // Get budget for default account
   let budgetData = null;
@@ -47,8 +54,8 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
         </CreateAccountDrawer>
-        {accounts.length > 0 &&
-          accounts?.map((account) => (
+        {accountsWithStats.length > 0 &&
+          accountsWithStats?.map((account) => (
             <AccountCard key={account.id} account={account} />
           ))}
       </div>

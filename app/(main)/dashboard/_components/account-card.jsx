@@ -17,7 +17,7 @@ import { updateDefaultAccount } from "@/actions/account";
 import { toast } from "sonner";
 
 export function AccountCard({ account }) {
-  const { name, type, balance, id, isDefault } = account;
+  const { name, type, balance, id, isDefault, income = 0, expense = 0 } = account;
 
   const {
     loading: updateDefaultLoading,
@@ -73,11 +73,11 @@ export function AccountCard({ account }) {
         <CardFooter className="flex justify-between text-sm text-muted-foreground">
           <div className="flex items-center">
             <ArrowUpRight className="mr-1 h-4 w-4 text-green-500" />
-            Income
+            Income: ${parseFloat(income).toFixed(2)}
           </div>
           <div className="flex items-center">
             <ArrowDownRight className="mr-1 h-4 w-4 text-red-500" />
-            Expense
+            Expense: ${parseFloat(expense).toFixed(2)}
           </div>
         </CardFooter>
       </Link>
