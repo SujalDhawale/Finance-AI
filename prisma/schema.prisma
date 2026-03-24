@@ -29,6 +29,9 @@ model Account {
   type         AccountType
   balance      Decimal       @default(0) // will ask inital balance while creating an account
   isDefault    Boolean       @default(false)
+  isLinked     Boolean       @default(false)
+  externalId   String?       @unique // ID from the AA provider
+  provider     String?       // e.g., "SETU", "FINVU"
   userId       String
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
@@ -52,6 +55,7 @@ model Transaction {
   nextRecurringDate DateTime?         // Next date for recurring transaction
   lastProcessed    DateTime?         // Last time this recurring transaction was processed
   status           TransactionStatus  @default(COMPLETED)
+  source           TransactionSource @default(MANUAL)
   userId           String
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   accountId        String
@@ -99,4 +103,9 @@ enum RecurringInterval {
   WEEKLY
   MONTHLY
   YEARLY
+}
+
+enum TransactionSource {
+  MANUAL
+  AA
 }

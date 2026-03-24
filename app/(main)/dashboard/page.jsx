@@ -5,9 +5,12 @@ import { getCurrentBudget } from "@/actions/budget";
 import { AccountCard } from "./_components/account-card";
 import { CreateAccountDrawer } from "@/components/create-account-drawer";
 import { BudgetProgress } from "./_components/budget-progress";
+import { DashboardOverview } from "./_components/transaction-overview";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus } from "lucide-react";
-import { DashboardOverview } from "./_components/transaction-overview";
+import { LinkAccountButton } from "@/components/link-account-button";
+import { LinkSuccessTracker } from "@/components/link-success-tracker";
+
 
 export default async function DashboardPage() {
   const [accounts, transactions] = await Promise.all([
@@ -32,6 +35,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      <Suspense fallback={null}>
+        <LinkSuccessTracker />
+      </Suspense>
+
       {/* Budget Progress */}
       <BudgetProgress
         initialBudget={budgetData?.budget}
@@ -58,6 +65,7 @@ export default async function DashboardPage() {
           accountsWithStats?.map((account) => (
             <AccountCard key={account.id} account={account} />
           ))}
+        <LinkAccountButton />
       </div>
     </div>
   );

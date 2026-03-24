@@ -227,66 +227,58 @@ export async function getUserTransactions(query = {}) {
   }
 }
 
-// Scan Receipt
 export async function scanReceipt(file) {
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
     // Convert File to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     // Convert ArrayBuffer to Base64
     const base64String = Buffer.from(arrayBuffer).toString("base64");
 
-    const prompt = `
-      Analyze this receipt image and extract the following information in JSON format:
-      - Total amount (just the number)
-      - Date (in ISO format)
-      - Description or items purchased (brief summary)
-      - Merchant/store name
-      - Suggested category (one of: housing,transportation,groceries,utilities,entertainment,food,shopping,healthcare,education,personal,travel,insurance,gifts,bills,other-expense )
-      
-      Only respond with valid JSON in this exact format:
-      {
-        "amount": number,
-        "date": "ISO date string",
-        "description": "string",
-        "merchantName": "string",
-        "category": "string"
-      }
-
-      If its not a recipt, return an empty object
-    `;
-
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          data: base64String,
-          mimeType: file.type,
-        },
+    // Call our Python ML service for OCR
+    const mlServiceUrl = process.env.ML_SERVICE_URL || "http://localhost:8000";
+    const response = await fetch(`${mlServiceUrl}/scan/receipt`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-      prompt,
-    ]);
+      body: JSON.stringify({
+        image_base64: base64String,
+        mime_type: file.type,
+      }),
+    });
 
-    const response = await result.response;
-    const text = response.text();
-    const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
-
-    try {
-      const data = JSON.parse(cleanedText);
-      return {
-        amount: parseFloat(data.amount),
-        date: new Date(data.date),
-        description: data.description,
-        category: data.category,
-        merchantName: data.merchantName,
-      };
-    } catch (parseError) {
-      console.error("Error parsing JSON response:", parseError);
-      throw new Error("Invalid response format from Gemini");
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`ML Service Error: ${errorText}`);
     }
+
+    const data = await response.json();
+
+    return {
+      amount: parseFloat(data.amount) || 0,
+      date: data.date ? new Date(data.date) : new Date(),
+      description: data.description || "",
+      category: data.category || "",
+      merchantName: data.merchantName || "",
+    };
   } catch (error) {
-    console.error("Error scanning receipt:", error);
-    throw new Error("Failed to scan receipt");
+    const errorInfo = {
+      message: error.message,
+      stack: error.stack,
+      details: error.response?.data || error
+    };
+    console.error("Error scanning receipt via ML Service:", errorInfo);
+    
+    // Write to a temporary file since terminal output is truncated
+    try {
+      const fs = require("fs");
+      const errorLogPath = "c:\\Users\\sujal\\GOOGLE 5 DAYS\\ai-finance-platform\\tmp\\gemini_error.json";
+      fs.writeFileSync(errorLogPath, JSON.stringify(errorInfo, null, 2));
+    } catch (fsError) {
+      console.error("Failed to write error log file:", fsError);
+    }
+
+    throw new Error("Failed to scan receipt. Please try again.");
   }
 }
 
